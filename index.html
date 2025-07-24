@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Rising Cost of Coffee: An Infographic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F0F4F8;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .stat-card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            text-align: center;
+        }
+        .flow-arrow {
+            font-size: 2rem;
+            color: #FF6B6B;
+            line-height: 1;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            width: 80%;
+            max-width: 500px;
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-6xl font-black text-[#1A535C] uppercase tracking-wide">The Daily Grind</h1>
+            <p class="text-xl md:text-2xl text-[#4ECDC4] mt-2 font-bold">Why Your Cup of Coffee Costs More Than Ever</p>
+        </header>
+
+        <section id="introduction" class="mb-16">
+            <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6 md:p-8">
+                <p class="text-lg text-center mb-6">Coffee is an American staple, but its price is on a volatile upward trend. A perfect storm of trade disputes, severe climate change impacts, and strained global supply chains is brewing. This infographic breaks down the complex factors pouring into the rising cost of your daily coffee.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <div class="stat-card border-t-4 border-[#1A535C]">
+                        <div class="text-5xl font-black text-[#1A535C]">66%</div>
+                        <p class="mt-2 text-gray-600">of Americans drink coffee daily, making the U.S. highly dependent on imports.</p>
+                    </div>
+                    <div class="stat-card border-t-4 border-[#4ECDC4]">
+                        <div class="text-5xl font-black text-[#4ECDC4]">>99%</div>
+                        <p class="mt-2 text-gray-600">of coffee consumed in the U.S. is imported, exposing consumers to global shocks.</p>
+                    </div>
+                    <div class="stat-card border-t-4 border-[#FF6B6B]">
+                        <div class="text-5xl font-black text-[#FF6B6B]">$2,000</div>
+                        <p class="mt-2 text-gray-600">Average annual household spend on coffee, a 15% increase since the pandemic.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="trade-policy" class="mb-16">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl md:text-4xl font-bold text-[#1A535C]">A Tax on Taste: Trade & Tariffs</h2>
+                <p class="max-w-3xl mx-auto mt-2 text-gray-600">Historically, coffee has been a zero-tariff import in the U.S. However, recent protectionist trade policies, like the proposed 50% tariff on Brazilian coffee, threaten to dramatically inflate prices for roasters and consumers.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-center mb-4 text-[#1A535C]">Top U.S. Coffee Suppliers</h3>
+                    <p class="text-center text-gray-600 mb-4">The U.S. relies on a few key nations for its coffee. Tariffs on major players like Brazil and Colombia have a massive ripple effect on the entire market.</p>
+                    <div class="chart-container h-80 md:h-96">
+                        <canvas id="importsDonutChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-center mb-4 text-[#1A535C]">Proposed Tariff Rates</h3>
+                    <p class="text-center text-gray-600 mb-4">Several key coffee-producing countries face significant proposed or existing tariffs, creating widespread market uncertainty.</p>
+                    <div class="chart-container h-80 md:h-96">
+                        <canvas id="tariffsBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+             <div class="mt-8 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                <h3 class="text-2xl font-bold text-center mb-6 text-[#1A535C]">The Tariff Multiplier Effect</h3>
+                <p class="text-center text-gray-600 max-w-3xl mx-auto mb-8">A tariff isn't just a simple tax. Its cost gets amplified as it moves through the supply chain, from the importer to your local cafe.</p>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-2">
+                    <div class="text-center p-4 rounded-lg bg-slate-50 w-full md:w-auto">
+                        <div class="text-4xl">💰</div>
+                        <h4 class="font-bold text-lg text-[#1A535C]">10% Tariff</h4>
+                        <p class="text-sm text-gray-600">Levied at Import</p>
+                    </div>
+                    <div class="flow-arrow transform md:rotate-0 rotate-90">➔</div>
+                    <div class="text-center p-4 rounded-lg bg-slate-50 w-full md:w-auto">
+                         <div class="text-4xl">🏭</div>
+                        <h4 class="font-bold text-lg text-[#4ECDC4]">60-85% Pass-Through</h4>
+                        <p class="text-sm text-gray-600">Importer to Roaster</p>
+                    </div>
+                    <div class="flow-arrow transform md:rotate-0 rotate-90">➔</div>
+                    <div class="text-center p-4 rounded-lg bg-slate-50 w-full md:w-auto">
+                        <div class="text-4xl">📈</div>
+                        <h4 class="font-bold text-lg text-[#FF6B6B]">15-20% Price Hike</h4>
+                        <p class="text-sm text-gray-600">At the Roaster Level</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="climate-change" class="mb-16">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl md:text-4xl font-bold text-[#1A535C]">The Climate Crisis in a Cup</h2>
+                <p class="max-w-3xl mx-auto mt-2 text-gray-600">Coffee plants are incredibly sensitive. Rising temperatures, erratic rainfall, and new pests are devastating crops worldwide, shrinking the available land for cultivation and threatening the future of coffee itself.</p>
+            </div>
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="stat-card items-center justify-center flex flex-col border-t-4 border-[#FF6B6B]">
+                    <div class="text-6xl font-black text-[#FF6B6B]">50%</div>
+                    <p class="mt-2 text-lg text-gray-600">Projected reduction in suitable coffee-growing land by 2050 due to climate change.</p>
+                </div>
+                <div class="stat-card items-center justify-center flex flex-col border-t-4 border-[#FFE66D]">
+                    <div class="text-6xl font-black text-[#F4A261]">60%</div>
+                    <p class="mt-2 text-lg text-gray-600">of wild coffee species are at risk of extinction, threatening genetic diversity.</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-2 md:p-4">
+                 <h3 class="text-2xl font-bold text-center my-4 text-[#1A535C]">Global Hotspots: Climate Impacts on Coffee Regions</h3>
+                 <p class="text-center text-gray-600 max-w-3xl mx-auto mb-4">From Latin America to Africa and Asia, no major coffee-growing region is safe from the effects of climate change. The map below highlights the key producing nations discussed in this report, all of which face significant threats.</p>
+                <div id="map-container" class="w-full h-[500px]"></div>
+            </div>
+        </section>
+
+        <section id="regional-impacts" class="mb-16">
+             <div class="text-center mb-8">
+                <h2 class="text-3xl md:text-4xl font-bold text-[#1A535C]">A World of Hurt: Regional Breakdowns</h2>
+                <p class="max-w-3xl mx-auto mt-2 text-gray-600">The climate crisis isn't uniform. Here's a look at the specific challenges faced by key coffee-producing countries, from devastating rains in Costa Rica to severe frosts in Brazil.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="stat-card text-left">
+                    <h4 class="font-bold text-xl text-[#1A535C] border-b-2 border-[#1A535C] pb-2">Brazil 🇧🇷</h4>
+                    <p class="mt-2 text-gray-600">Recurring frosts and droughts have decimated Arabica yields. As the world's largest producer, Brazil's weather shocks send immediate price spikes through the global market.</p>
+                    <button onclick="getClimateInsight('Brazil')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
+                    <div id="insight-Brazil" class="mt-2 text-sm text-gray-700"></div>
+                </div>
+                 <div class="stat-card text-left">
+                    <h4 class="font-bold text-xl text-[#4ECDC4] border-b-2 border-[#4ECDC4] pb-2">Costa Rica 🇨🇷</h4>
+                    <p class="mt-2 text-gray-600">Heavy rains and fungal diseases like coffee rust have led to 50% production drops in some regions, pushing farmers to abandon their land.</p>
+                    <button onclick="getClimateInsight('Costa Rica')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
+                    <div id="insight-CostaRica" class="mt-2 text-sm text-gray-700"></div>
+                </div>
+                 <div class="stat-card text-left">
+                    <h4 class="font-bold text-xl text-[#FF6B6B] border-b-2 border-[#FF6B6B] pb-2">Colombia 🇨🇴</h4>
+                    <p class="mt-2 text-gray-600">Extreme weather from La Niña and El Niño, plus the spread of the coffee berry borer pest to higher altitudes, threaten harvests.</p>
+                    <button onclick="getClimateInsight('Colombia')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
+                    <div id="insight-Colombia" class="mt-2 text-sm text-gray-700"></div>
+                </div>
+                 <div class="stat-card text-left">
+                    <h4 class="font-bold text-xl text-[#FFE66D] border-b-2 border-[#FFE66D] pb-2">Guatemala 🇬🇹</h4>
+                    <p class="mt-2 text-gray-600">A combination of drought, coffee leaf rust, rising fertilizer costs, and major labor shortages creates a multi-faceted crisis for farmers.</p>
+                    <button onclick="getClimateInsight('Guatemala')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
+                    <div id="insight-Guatemala" class="mt-2 text-sm text-gray-700"></div>
+                </div>
+                 <div class="stat-card text-left">
+                    <h4 class="font-bold text-xl text-[#F4A261] border-b-2 border-[#F4A261] pb-2">Ethiopia 🇪🇹</h4>
+                    <p class="mt-2 text-gray-600">Up to 59% of current growing areas could become unsuitable, forcing a difficult and costly migration of coffee farming to higher elevations.</p>
+                    <button onclick="getClimateInsight('Ethiopia')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
+                    <div id="insight-Ethiopia" class="mt-2 text-sm text-gray-700"></div>
+                </div>
+                 <div class="stat-card text-left">
+                    <h4 class="font-bold text-xl text-[#1A535C] border-b-2 border-[#1A535C] pb-2">India 🇮🇳 & Sumatra 🇮🇩</h4>
+                    <p class="mt-2 text-gray-600">Unpredictable monsoons, heavy rains during the dry season, and prolonged droughts are spoiling crops and leading to "empty" cherries.</p>
+                    <button onclick="getClimateInsight('India and Sumatra')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
+                    <div id="insight-IndiaandSumatra" class="mt-2 text-sm text-gray-700"></div>
+                </div>
+                <div class="stat-card text-left">
+                    <h4 class="font-bold text-xl text-[#4ECDC4] border-b-2 border-[#4ECDC4] pb-2">Kenya 🇰🇪</h4>
+                    <p class="mt-2 text-gray-600">Rising temperatures and changing rainfall patterns are impacting coffee quality and yield, pushing cultivation to higher altitudes.</p>
+                    <button onclick="getClimateInsight('Kenya')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
+                    <div id="insight-Kenya" class="mt-2 text-sm text-gray-700"></div>
+                </div>
+                <div class="stat-card text-left">
+                    <h4 class="font-bold text-xl text-[#FF6B6B] border-b-2 border-[#FF6B6B] pb-2">Tanzania 🇹🇿</h4>
+                    <p class="mt-2 text-gray-600">Increased frequency of droughts and floods, combined with pest outbreaks, pose significant threats to coffee production.</p>
+                    <button onclick="getClimateInsight('Tanzania')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
+                    <div id="insight-Tanzania" class="mt-2 text-sm text-gray-700"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="other-factors" class="mb-16">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl md:text-4xl font-bold text-[#1A535C]">The Full Blend: Other Cost Drivers</h2>
+                <p class="max-w-3xl mx-auto mt-2 text-gray-600">Beyond tariffs and climate, a host of economic pressures are contributing to the final price you pay.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="stat-card">
+                    <div class="text-5xl mb-2">📈</div>
+                    <h4 class="font-bold text-lg text-[#1A535C]">Demand Outpaces Supply</h4>
+                    <p class="text-gray-600 text-sm">Global consumption, especially for specialty coffee, is growing faster than production, creating intense competition for beans.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="text-5xl mb-2">🧑‍🌾</div>
+                    <h4 class="font-bold text-lg text-[#4ECDC4]">Rising Production Costs</h4>
+                    <p class="text-gray-600 text-sm">Labor shortages and soaring fertilizer prices mean it costs farmers more to grow coffee.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="text-5xl mb-2">🚢</div>
+                    <h4 class="font-bold text-lg text-[#FF6B6B]">Supply Chain Chaos</h4>
+                    <p class="text-gray-600 text-sm">Geopolitical tensions and canal droughts have dramatically increased shipping and freight costs.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="text-5xl mb-2">💸</div>
+                    <h4 class="font-bold text-lg text-[#FFE66D]">Market Speculation</h4>
+                    <p class="text-gray-600 text-sm">Coffee's price is influenced by futures markets, where speculation can amplify volatility and detach prices from reality.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center mt-12 pt-8 border-t border-gray-300">
+            <p class="text-gray-600">Data synthesized from a multi-factorial analysis of U.S. coffee price dynamics. Infographic by Canvas Infographics.</p>
+        </footer>
+
+    </div>
+
+    <!-- The Modal -->
+    <div id="insightModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <h3 class="text-xl font-bold mb-4 text-[#1A535C]" id="modalTitle">Climate Insight for [Country]</h3>
+            <p id="modalContent" class="text-gray-700"></p>
+            <div id="modalLoading" class="text-center mt-4 text-[#4ECDC4]" style="display: none;">Loading insight...</div>
+        </div>
+    </div>
+
+    <script>
+        const energeticPlayfulPalette = {
+            darkCyan: '#1A535C',
+            turquoise: '#4ECDC4',
+            lightRed: '#FF6B6B',
+            yellow: '#FFE66D',
+            orange: '#F4A261',
+            white: '#FFFFFF',
+            gray: '#6B7280'
+        };
+
+        const tooltipConfig = {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels[item.dataIndex];
+                            if (Array.isArray(label)) {
+                              return label.join(' ');
+                            } else {
+                              return label;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        function wrapLabels(label, maxWidth) {
+            const words = label.split(' ');
+            const lines = [];
+            let currentLine = '';
+            words.forEach(word => {
+                if ((currentLine + word).length > maxWidth) {
+                    lines.push(currentLine.trim());
+                    currentLine = '';
+                }
+                currentLine += word + ' ';
+            });
+            lines.push(currentLine.trim());
+            return lines;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const importsCtx = document.getElementById('importsDonutChart').getContext('2d');
+            new Chart(importsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Brazil', 'Colombia', 'Vietnam', 'Honduras', 'Other'],
+                    datasets: [{
+                        label: 'Share of U.S. Coffee Imports',
+                        data: [31, 20, 9, 7, 33],
+                        backgroundColor: [
+                            energeticPlayfulPalette.darkCyan,
+                            energeticPlayfulPalette.turquoise,
+                            energeticPlayfulPalette.lightRed,
+                            energeticPlayfulPalette.yellow,
+                            energeticPlayfulPalette.orange
+                        ],
+                        borderColor: energeticPlayfulPalette.white,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        ...tooltipConfig.plugins,
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+
+            const tariffsCtx = document.getElementById('tariffsBarChart').getContext('2d');
+            new Chart(tariffsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Brazil', 'Mexico', 'Vietnam', 'Indonesia'],
+                    datasets: [{
+                        label: 'Current/Proposed Tariff Rate (%)',
+                        data: [50, 45, 20, 19],
+                        backgroundColor: [
+                            energeticPlayfulPalette.lightRed,
+                            energeticPlayfulPalette.orange,
+                            energeticPlayfulPalette.turquoise,
+                            energeticPlayfulPalette.darkCyan
+                        ],
+                        borderColor: energeticPlayfulPalette.white,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Tariff Rate (%)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        ...tooltipConfig.plugins,
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            const mapElement = document.getElementById('map-container');
+            const mapData = [{
+                type: 'scattergeo',
+                mode: 'markers+text',
+                lon: [-47.9292, -74.2973, -64.2704, -90.2308, 38.8623, 36.7783, 34.8888, 78.9629, 95.3175, 37.9083, 34.8888],
+                lat: [-15.7797, 4.5709, -15.5961, 15.7835, 9.1450, -1.2921, -6.3690, 20.5937, 3.9101, -0.0236, -6.3690],
+                text: ['Brazil', 'Colombia', 'Costa Rica', 'Guatemala', 'Ethiopia', 'Kenya', 'Tanzania', 'India', 'Sumatra', 'Kenya', 'Tanzania'],
+                textposition: 'top center',
+                textfont: {
+                    color: energeticPlayfulPalette.darkCyan,
+                    size: 12,
+                    family: 'Inter, sans-serif'
+                },
+                marker: {
+                    size: [25, 20, 15, 15, 18, 15, 15, 18, 18, 15, 15],
+                    color: [
+                        energeticPlayfulPalette.lightRed, 
+                        energeticPlayfulPalette.turquoise, 
+                        energeticPlayfulPalette.orange, 
+                        energeticPlayfulPalette.yellow, 
+                        energeticPlayfulPalette.darkCyan,
+                        energeticPlayfulPalette.turquoise,
+                        energeticPlayfulPalette.orange,
+                        energeticPlayfulPalette.lightRed,
+                        energeticPlayfulPalette.yellow,
+                        energeticPlayfulPalette.turquoise,
+                        energeticPlayfulPalette.orange
+                    ],
+                    line: {
+                        width: 1,
+                        color: energeticPlayfulPalette.white
+                    }
+                },
+                name: 'Coffee Producing Nations'
+            }];
+
+            const mapLayout = {
+                title: '',
+                showlegend: false,
+                geo: {
+                    scope: 'world',
+                    projection: {
+                        type: 'robinson'
+                    },
+                    showland: true,
+                    landcolor: 'rgb(240, 244, 248)',
+                    subunitcolor: 'rgb(255, 255, 255)',
+                    countrycolor: 'rgb(217, 217, 217)',
+                    showlakes: true,
+                    lakecolor: 'rgb(255, 255, 255)',
+                    bgcolor: 'rgba(0,0,0,0)'
+                },
+                margin: { l: 0, r: 0, t: 0, b: 0 },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot(mapElement, mapData, mapLayout, {responsive: true, displayModeBar: false});
+        });
+
+        async function getClimateInsight(countryName) {
+            const modal = document.getElementById('insightModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const modalLoading = document.getElementById('modalLoading');
+
+            modalTitle.textContent = `Climate Insight for ${countryName}`;
+            modalContent.textContent = '';
+            modalLoading.style.display = 'block';
+            modal.style.display = 'flex'; // Use flex to center
+
+            try {
+                let chatHistory = [];
+                const prompt = `Provide a concise summary of climate change impacts on coffee production in ${countryName}. Focus on specific issues like temperature changes, rainfall patterns, pests, and land suitability.`;
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    modalContent.textContent = text;
+                } else {
+                    modalContent.textContent = 'Could not retrieve insight. Please try again.';
+                }
+            } catch (error) {
+                console.error('Error fetching climate insight:', error);
+                modalContent.textContent = 'An error occurred while fetching insight. Please try again.';
+            } finally {
+                modalLoading.style.display = 'none';
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('insightModal');
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('insightModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
