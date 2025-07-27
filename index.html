@@ -1,511 +1,591 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Rising Cost of Coffee: An Infographic</title>
+    <title>Interactive Analysis of ARK Funds</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate & Sky -->
+    <!-- Application Structure Plan: A multi-section, single-page application with a sticky navigation header for smooth scrolling. The structure is designed for user-led exploration rather than a linear report format. It includes: 1) An 'Overview' with a filterable table of all funds. 2) A 'Performance Hub' for interactive chart-based comparison of key metrics. 3) A 'Thematic Explorer' using interactive cards to showcase future market growth. 4) A 'Fund Deep Dive' to inspect individual fund theses and holdings. 5) A 'Portfolio Builder' to interactively display the report's strategic recommendations. This task-oriented design enhances usability by allowing users to directly access the information they are most interested in, fostering engagement over passive reading. -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation -> Interaction -> Justification. 1) Fund List (Table 1) -> Organize -> Sortable HTML Table -> Click headers to sort -> Best for structured data comparison. 2) Performance Data (Table 2) -> Compare -> Interactive Bar Chart -> Buttons select metric (1Y, 5Y, etc.) -> Bar charts excel at direct value comparison. 3) Growth of $10k -> Change -> Interactive Line Chart -> Checkboxes select funds -> Line charts are ideal for showing trends over time. 4) Fund Holdings -> Inform -> Donut Chart & List -> Dropdown selects fund -> Donut chart visualizes concentration, list provides detail. 5) Future Outlook (CAGR) -> Inform -> Interactive Cards -> Hover/Click for details -> Visually engaging way to present key stats. 6) Strategic Combos -> Guide -> Tabbed Interface -> Click tabs for risk profiles -> Organizes recommendations cleanly. All charts use Chart.js/Canvas. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #F0F4F8;
+            background-color: #f8fafc; /* slate-50 */
         }
         .chart-container {
             position: relative;
             width: 100%;
-            max-width: 600px;
             margin-left: auto;
             margin-right: auto;
-            height: 350px;
-            max-height: 400px;
+            max-width: 800px;
+            height: 320px;
         }
         @media (min-width: 768px) {
             .chart-container {
-                height: 400px;
+                height: 450px;
             }
         }
-        .stat-card {
-            background-color: #ffffff;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        .section-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #0f172a; /* slate-900 */
+            margin-bottom: 1rem;
             text-align: center;
         }
-        .flow-arrow {
-            font-size: 2rem;
-            color: #FF6B6B;
-            line-height: 1;
+        .section-intro {
+            font-size: 1.125rem;
+            color: #475569; /* slate-600 */
+            max-width: 48rem;
+            margin: 0 auto 2.5rem auto;
+            text-align: center;
         }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-            justify-content: center;
-            align-items: center;
+        .active-nav {
+            color: #0284c7; /* sky-600 */
+            font-weight: 600;
         }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 20px;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            width: 80%;
-            max-width: 500px;
-            position: relative;
+        .inactive-nav {
+            color: #475569; /* slate-600 */
         }
-        .close-button {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
+        .active-button {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
         }
-        .close-button:hover,
-        .close-button:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
+        .inactive-button {
+            background-color: #e2e8f0; /* slate-200 */
+            color: #475569; /* slate-600 */
+        }
+        .active-tab {
+            border-bottom: 2px solid #0ea5e9;
+            color: #0f172a;
+        }
+        .inactive-tab {
+            border-bottom: 2px solid transparent;
+            color: #64748b;
         }
     </style>
 </head>
-<body class="bg-slate-100 text-gray-800">
+<body class="text-slate-800">
 
-    <div class="container mx-auto p-4 md:p-8">
-
-        <header class="text-center mb-12">
-            <h1 class="text-4xl md:text-6xl font-black text-[#1A535C] uppercase tracking-wide">The Daily Grind</h1>
-            <p class="text-xl md:text-2xl text-[#4ECDC4] mt-2 font-bold">Why Your Cup of Coffee Costs More Than Ever</p>
-        </header>
-
-        <section id="introduction" class="mb-16">
-            <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6 md:p-8">
-                <p class="text-lg text-center mb-6">Coffee is an American staple, but its price is on a volatile upward trend. A perfect storm of trade disputes, severe climate change impacts, and strained global supply chains is brewing. This infographic breaks down the complex factors pouring into the rising cost of your daily coffee.</p>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                    <div class="stat-card border-t-4 border-[#1A535C]">
-                        <div class="text-5xl font-black text-[#1A535C]">66%</div>
-                        <p class="mt-2 text-gray-600">of Americans drink coffee daily, making the U.S. highly dependent on imports.</p>
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-slate-900">ARK Funds Interactive Analysis</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link inactive-nav px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Overview</a>
+                        <a href="#performance" class="nav-link inactive-nav px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Performance Hub</a>
+                        <a href="#thematics" class="nav-link inactive-nav px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Thematic Explorer</a>
+                        <a href="#deepdive" class="nav-link inactive-nav px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Fund Deep Dive</a>
+                        <a href="#strategy" class="nav-link inactive-nav px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Strategy Builder</a>
                     </div>
-                    <div class="stat-card border-t-4 border-[#4ECDC4]">
-                        <div class="text-5xl font-black text-[#4ECDC4]">>99%</div>
-                        <p class="mt-2 text-gray-600">of coffee consumed in the U.S. is imported, exposing consumers to global shocks.</p>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="bg-white py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">Exploring Disruptive Innovation</h1>
+                <p class="mt-6 text-lg leading-8 text-slate-600 max-w-3xl mx-auto">An interactive dashboard to analyze the performance, themes, and strategic potential of ARK Invest's exchange-traded funds. Navigate through the sections to uncover insights from the comprehensive report.</p>
+            </div>
+        </section>
+
+        <!-- Section 1: ARK Universe Overview -->
+        <section id="overview" class="py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="section-title">The ARK Universe</h2>
+                <p class="section-intro">This section provides a comprehensive, sortable overview of all ARK ETFs covered in the report. Click on the table headers to sort the funds by their key characteristics, such as inception date or expense ratio, to quickly compare and understand the landscape of ARK's offerings.</p>
+                <div class="bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
+                    <table class="w-full min-w-max text-sm text-left text-slate-500">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th scope="col" class="p-4 cursor-pointer" data-sort="ticker">Ticker</th>
+                                <th scope="col" class="p-4 cursor-pointer" data-sort="name">Fund Name</th>
+                                <th scope="col" class="p-4 cursor-pointer" data-sort="inception">Inception Date</th>
+                                <th scope="col" class="p-4 cursor-pointer" data-sort="style">Management Style</th>
+                                <th scope="col" class="p-4 cursor-pointer" data-sort="expense">Expense Ratio (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="funds-table-body">
+                            <!-- JS will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Performance Hub -->
+        <section id="performance" class="py-16 sm:py-24 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="section-title">Performance Hub</h2>
+                <p class="section-intro">Interactively compare the historical performance of ARK's actively managed funds. Use the buttons to switch between different time horizons (1-Year, 5-Year, Since Inception) and see how the funds stack up. This hub is designed to visualize the high-volatility, high-return nature of these investments.</p>
+                
+                <div class="bg-white p-4 sm:p-8 rounded-xl shadow-lg">
+                    <div class="mb-6 text-center">
+                        <span class="text-sm font-medium text-slate-600 mr-4">Select Metric:</span>
+                        <div id="metric-buttons" class="inline-flex rounded-md shadow-sm" role="group">
+                            <!-- JS will populate buttons -->
+                        </div>
                     </div>
-                    <div class="stat-card border-t-4 border-[#FF6B6B]">
-                        <div class="text-5xl font-black text-[#FF6B6B]">$2,000</div>
-                        <p class="mt-2 text-gray-600">Average annual household spend on coffee, a 15% increase since the pandemic.</p>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                    <p id="chart-context-text" class="text-center mt-4 text-sm text-slate-500"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Thematic Explorer -->
+        <section id="thematics" class="py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="section-title">Thematic Explorer</h2>
+                <p class="section-intro">Explore the future outlook for the disruptive innovation themes that underpin ARK's investment strategy. Each card represents a key market, showcasing its projected growth (CAGR) and a brief overview. This section helps contextualize the long-term potential that ARK aims to capture.</p>
+                <div id="thematic-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- JS will populate this -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Fund Deep Dive -->
+        <section id="deepdive" class="py-16 sm:py-24 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="section-title">Fund Deep Dive</h2>
+                <p class="section-intro">Select a fund from the dropdown menu to get a detailed look at its investment thesis and top holdings. The donut chart visualizes portfolio concentration, while the list provides specific company allocations. This tool is designed to help you understand the specific exposures within each ETF.</p>
+                
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-8">
+                        <select id="fund-selector" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                            <!-- JS will populate this -->
+                        </select>
+                    </div>
+
+                    <div id="fund-details-content" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg transition-opacity duration-500">
+                        <!-- JS will populate this -->
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="trade-policy" class="mb-16">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl md:text-4xl font-bold text-[#1A535C]">A Tax on Taste: Trade & Tariffs</h2>
-                <p class="max-w-3xl mx-auto mt-2 text-gray-600">Historically, coffee has been a zero-tariff import in the U.S. However, recent protectionist trade policies, like the proposed 50% tariff on Brazilian coffee, threaten to dramatically inflate prices for roasters and consumers.</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-xl font-bold text-center mb-4 text-[#1A535C]">Top U.S. Coffee Suppliers</h3>
-                    <p class="text-center text-gray-600 mb-4">The U.S. relies on a few key nations for its coffee. Tariffs on major players like Brazil and Colombia have a massive ripple effect on the entire market.</p>
-                    <div class="chart-container h-80 md:h-96">
-                        <canvas id="importsDonutChart"></canvas>
+        <!-- Section 5: Strategy Builder -->
+        <section id="strategy" class="py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="section-title">Strategy Builder</h2>
+                <p class="section-intro">This section translates the report's strategic analysis into an interactive format. Select a risk profile to view the report's recommended fund combinations and the rationale behind each strategy. This helps in understanding how different ARK funds can be combined to align with specific investment goals.</p>
+                
+                <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8">
+                    <div class="border-b border-slate-200">
+                        <nav id="strategy-tabs" class="-mb-px flex space-x-6" aria-label="Tabs">
+                           <!-- JS will populate tabs -->
+                        </nav>
                     </div>
-                </div>
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-xl font-bold text-center mb-4 text-[#1A535C]">Proposed Tariff Rates</h3>
-                    <p class="text-center text-gray-600 mb-4">Several key coffee-producing countries face significant proposed or existing tariffs, creating widespread market uncertainty.</p>
-                    <div class="chart-container h-80 md:h-96">
-                        <canvas id="tariffsBarChart"></canvas>
-                    </div>
-                </div>
-            </div>
-             <div class="mt-8 bg-white rounded-lg shadow-lg p-6 md:p-8">
-                <h3 class="text-2xl font-bold text-center mb-6 text-[#1A535C]">The Tariff Multiplier Effect</h3>
-                <p class="text-center text-gray-600 max-w-3xl mx-auto mb-8">A tariff isn't just a simple tax. Its cost gets amplified as it moves through the supply chain, from the importer to your local cafe.</p>
-                <div class="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-2">
-                    <div class="text-center p-4 rounded-lg bg-slate-50 w-full md:w-auto">
-                        <div class="text-4xl">💰</div>
-                        <h4 class="font-bold text-lg text-[#1A535C]">10% Tariff</h4>
-                        <p class="text-sm text-gray-600">Levied at Import</p>
-                    </div>
-                    <div class="flow-arrow transform md:rotate-0 rotate-90">➔</div>
-                    <div class="text-center p-4 rounded-lg bg-slate-50 w-full md:w-auto">
-                         <div class="text-4xl">🏭</div>
-                        <h4 class="font-bold text-lg text-[#4ECDC4]">60-85% Pass-Through</h4>
-                        <p class="text-sm text-gray-600">Importer to Roaster</p>
-                    </div>
-                    <div class="flow-arrow transform md:rotate-0 rotate-90">➔</div>
-                    <div class="text-center p-4 rounded-lg bg-slate-50 w-full md:w-auto">
-                        <div class="text-4xl">📈</div>
-                        <h4 class="font-bold text-lg text-[#FF6B6B]">15-20% Price Hike</h4>
-                        <p class="text-sm text-gray-600">At the Roaster Level</p>
+                    <div id="strategy-content" class="mt-8">
+                        <!-- JS will populate content -->
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="climate-change" class="mb-16">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl md:text-4xl font-bold text-[#1A535C]">The Climate Crisis in a Cup</h2>
-                <p class="max-w-3xl mx-auto mt-2 text-gray-600">Coffee plants are incredibly sensitive. Rising temperatures, erratic rainfall, and new pests are devastating crops worldwide, shrinking the available land for cultivation and threatening the future of coffee itself.</p>
-            </div>
-             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div class="stat-card items-center justify-center flex flex-col border-t-4 border-[#FF6B6B]">
-                    <div class="text-6xl font-black text-[#FF6B6B]">50%</div>
-                    <p class="mt-2 text-lg text-gray-600">Projected reduction in suitable coffee-growing land by 2050 due to climate change.</p>
-                </div>
-                <div class="stat-card items-center justify-center flex flex-col border-t-4 border-[#FFE66D]">
-                    <div class="text-6xl font-black text-[#F4A261]">60%</div>
-                    <p class="mt-2 text-lg text-gray-600">of wild coffee species are at risk of extinction, threatening genetic diversity.</p>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow-lg p-2 md:p-4">
-                 <h3 class="text-2xl font-bold text-center my-4 text-[#1A535C]">Global Hotspots: Climate Impacts on Coffee Regions</h3>
-                 <p class="text-center text-gray-600 max-w-3xl mx-auto mb-4">From Latin America to Africa and Asia, no major coffee-growing region is safe from the effects of climate change. The map below highlights the key producing nations discussed in this report, all of which face significant threats.</p>
-                <div id="map-container" class="w-full h-[500px]"></div>
-            </div>
-        </section>
+    </main>
 
-        <section id="regional-impacts" class="mb-16">
-             <div class="text-center mb-8">
-                <h2 class="text-3xl md:text-4xl font-bold text-[#1A535C]">A World of Hurt: Regional Breakdowns</h2>
-                <p class="max-w-3xl mx-auto mt-2 text-gray-600">The climate crisis isn't uniform. Here's a look at the specific challenges faced by key coffee-producing countries, from devastating rains in Costa Rica to severe frosts in Brazil.</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="stat-card text-left">
-                    <h4 class="font-bold text-xl text-[#1A535C] border-b-2 border-[#1A535C] pb-2">Brazil 🇧🇷</h4>
-                    <p class="mt-2 text-gray-600">Recurring frosts and droughts have decimated Arabica yields. As the world's largest producer, Brazil's weather shocks send immediate price spikes through the global market.</p>
-                    <button onclick="getClimateInsight('Brazil')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
-                    <div id="insight-Brazil" class="mt-2 text-sm text-gray-700"></div>
-                </div>
-                 <div class="stat-card text-left">
-                    <h4 class="font-bold text-xl text-[#4ECDC4] border-b-2 border-[#4ECDC4] pb-2">Costa Rica 🇨🇷</h4>
-                    <p class="mt-2 text-gray-600">Heavy rains and fungal diseases like coffee rust have led to 50% production drops in some regions, pushing farmers to abandon their land.</p>
-                    <button onclick="getClimateInsight('Costa Rica')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
-                    <div id="insight-CostaRica" class="mt-2 text-sm text-gray-700"></div>
-                </div>
-                 <div class="stat-card text-left">
-                    <h4 class="font-bold text-xl text-[#FF6B6B] border-b-2 border-[#FF6B6B] pb-2">Colombia 🇨🇴</h4>
-                    <p class="mt-2 text-gray-600">Extreme weather from La Niña and El Niño, plus the spread of the coffee berry borer pest to higher altitudes, threaten harvests.</p>
-                    <button onclick="getClimateInsight('Colombia')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
-                    <div id="insight-Colombia" class="mt-2 text-sm text-gray-700"></div>
-                </div>
-                 <div class="stat-card text-left">
-                    <h4 class="font-bold text-xl text-[#FFE66D] border-b-2 border-[#FFE66D] pb-2">Guatemala 🇬🇹</h4>
-                    <p class="mt-2 text-gray-600">A combination of drought, coffee leaf rust, rising fertilizer costs, and major labor shortages creates a multi-faceted crisis for farmers.</p>
-                    <button onclick="getClimateInsight('Guatemala')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
-                    <div id="insight-Guatemala" class="mt-2 text-sm text-gray-700"></div>
-                </div>
-                 <div class="stat-card text-left">
-                    <h4 class="font-bold text-xl text-[#F4A261] border-b-2 border-[#F4A261] pb-2">Ethiopia 🇪🇹</h4>
-                    <p class="mt-2 text-gray-600">Up to 59% of current growing areas could become unsuitable, forcing a difficult and costly migration of coffee farming to higher elevations.</p>
-                    <button onclick="getClimateInsight('Ethiopia')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
-                    <div id="insight-Ethiopia" class="mt-2 text-sm text-gray-700"></div>
-                </div>
-                 <div class="stat-card text-left">
-                    <h4 class="font-bold text-xl text-[#1A535C] border-b-2 border-[#1A535C] pb-2">India 🇮🇳 & Sumatra 🇮🇩</h4>
-                    <p class="mt-2 text-gray-600">Unpredictable monsoons, heavy rains during the dry season, and prolonged droughts are spoiling crops and leading to "empty" cherries.</p>
-                    <button onclick="getClimateInsight('India and Sumatra')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
-                    <div id="insight-IndiaandSumatra" class="mt-2 text-sm text-gray-700"></div>
-                </div>
-                <div class="stat-card text-left">
-                    <h4 class="font-bold text-xl text-[#4ECDC4] border-b-2 border-[#4ECDC4] pb-2">Kenya 🇰🇪</h4>
-                    <p class="mt-2 text-gray-600">Rising temperatures and changing rainfall patterns are impacting coffee quality and yield, pushing cultivation to higher altitudes.</p>
-                    <button onclick="getClimateInsight('Kenya')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
-                    <div id="insight-Kenya" class="mt-2 text-sm text-gray-700"></div>
-                </div>
-                <div class="stat-card text-left">
-                    <h4 class="font-bold text-xl text-[#FF6B6B] border-b-2 border-[#FF6B6B] pb-2">Tanzania 🇹🇿</h4>
-                    <p class="mt-2 text-gray-600">Increased frequency of droughts and floods, combined with pest outbreaks, pose significant threats to coffee production.</p>
-                    <button onclick="getClimateInsight('Tanzania')" class="mt-4 bg-[#4ECDC4] text-white py-2 px-4 rounded-md hover:bg-[#1A535C] transition-colors duration-300 shadow-md">✨ Climate Insight</button>
-                    <div id="insight-Tanzania" class="mt-2 text-sm text-gray-700"></div>
-                </div>
-            </div>
-        </section>
-
-        <section id="other-factors" class="mb-16">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl md:text-4xl font-bold text-[#1A535C]">The Full Blend: Other Cost Drivers</h2>
-                <p class="max-w-3xl mx-auto mt-2 text-gray-600">Beyond tariffs and climate, a host of economic pressures are contributing to the final price you pay.</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="stat-card">
-                    <div class="text-5xl mb-2">📈</div>
-                    <h4 class="font-bold text-lg text-[#1A535C]">Demand Outpaces Supply</h4>
-                    <p class="text-gray-600 text-sm">Global consumption, especially for specialty coffee, is growing faster than production, creating intense competition for beans.</p>
-                </div>
-                <div class="stat-card">
-                    <div class="text-5xl mb-2">🧑‍🌾</div>
-                    <h4 class="font-bold text-lg text-[#4ECDC4]">Rising Production Costs</h4>
-                    <p class="text-gray-600 text-sm">Labor shortages and soaring fertilizer prices mean it costs farmers more to grow coffee.</p>
-                </div>
-                <div class="stat-card">
-                    <div class="text-5xl mb-2">🚢</div>
-                    <h4 class="font-bold text-lg text-[#FF6B6B]">Supply Chain Chaos</h4>
-                    <p class="text-gray-600 text-sm">Geopolitical tensions and canal droughts have dramatically increased shipping and freight costs.</p>
-                </div>
-                <div class="stat-card">
-                    <div class="text-5xl mb-2">💸</div>
-                    <h4 class="font-bold text-lg text-[#FFE66D]">Market Speculation</h4>
-                    <p class="text-gray-600 text-sm">Coffee's price is influenced by futures markets, where speculation can amplify volatility and detach prices from reality.</p>
-                </div>
-            </div>
-        </section>
-
-        <footer class="text-center mt-12 pt-8 border-t border-gray-300">
-            <p class="text-gray-600">Data synthesized from a multi-factorial analysis of U.S. coffee price dynamics. Infographic by Canvas Infographics.</p>
-        </footer>
-
-    </div>
-
-    <!-- The Modal -->
-    <div id="insightModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeModal()">&times;</span>
-            <h3 class="text-xl font-bold mb-4 text-[#1A535C]" id="modalTitle">Climate Insight for [Country]</h3>
-            <p id="modalContent" class="text-gray-700"></p>
-            <div id="modalLoading" class="text-center mt-4 text-[#4ECDC4]" style="display: none;">Loading insight...</div>
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400">
+        <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <p class="text-xs text-center">
+                <strong>Disclaimer:</strong> Past performance is not indicative of future results. Investing in ARK funds, particularly those focused on disruptive innovation, involves a high degree of risk, including the potential for significant or complete loss of investment. The projections and recommendations in this application are based on the source report's data and market analyses, but actual results may vary materially. Investors should conduct their own thorough due diligence and consult with a qualified financial advisor before making any investment decisions.
+            </p>
         </div>
-    </div>
+    </footer>
 
     <script>
-        const energeticPlayfulPalette = {
-            darkCyan: '#1A535C',
-            turquoise: '#4ECDC4',
-            lightRed: '#FF6B6B',
-            yellow: '#FFE66D',
-            orange: '#F4A261',
-            white: '#FFFFFF',
-            gray: '#6B7280'
+        const fundsData = [
+            { ticker: 'ARKK', name: 'ARK Innovation ETF', inception: '2014-10-31', style: 'Actively Managed', expense: 0.75 },
+            { ticker: 'ARKQ', name: 'ARK Autonomous Tech. & Robotics ETF', inception: '2014-09-30', style: 'Actively Managed', expense: 0.75 },
+            { ticker: 'ARKW', name: 'ARK Next Generation Internet ETF', inception: '2014-09-29', style: 'Actively Managed', expense: 0.82 },
+            { ticker: 'ARKG', name: 'ARK Genomic Revolution ETF', inception: '2014-10-31', style: 'Actively Managed', expense: 0.75 },
+            { ticker: 'ARKF', name: 'ARK Fintech Innovation ETF', inception: '2019-02-01', style: 'Actively Managed', expense: 0.75 },
+            { ticker: 'ARKX', name: 'ARK Space Exploration & Innovation ETF', inception: '2021-03-30', style: 'Actively Managed', expense: 0.75 },
+            { ticker: 'PRNT', name: 'The 3D Printing ETF', inception: '2016-07-18', style: 'Indexed', expense: 0.66 },
+            { ticker: 'IZRL', name: 'ARK Israel Innovative Technology ETF', inception: '2017-12-04', style: 'Indexed', expense: 0.49 },
+            { ticker: 'ARKB', name: 'ARK 21Shares Bitcoin ETF', inception: '2024-01-10', style: 'Sub-Advised', expense: 0.21 },
+            { ticker: 'ARKA', name: 'ARK 21Shares Active Bitcoin Futures Strategy ETF', inception: '2023-11-13', style: 'Sub-Advised', expense: 0.70 },
+            { ticker: 'ARKD', name: 'ARK 21Shares Blockchain and Digital Economy Innovation ETF', inception: '2023-11-13', style: 'Sub-Advised', expense: 0.70 },
+            { ticker: 'ARKZ', name: 'ARK 21Shares Active Ethereum Futures Strategy ETF', inception: '2023-11-13', style: 'Sub-Advised', expense: 0.70 },
+        ];
+
+        const performanceData = {
+            '1-Year': { ARKK: 61.87, ARKQ: 61.7, ARKW: 89.0, ARKG: 3.3, ARKF: 80.1, ARKX: 61.4 },
+            '5-Year': { ARKK: 14.62, ARKQ: 14.1, ARKW: 12.6, ARKG: -13.9, ARKF: 9.8, ARKX: null },
+            'Since Inception': { ARKK: 14.29, ARKQ: 15.8, ARKW: 22.8, ARKG: 2.5, ARKF: 15.5, ARKX: 4.2 }
         };
 
-        const tooltipConfig = {
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        title: function(tooltipItems) {
-                            const item = tooltipItems[0];
-                            let label = item.chart.data.labels[item.dataIndex];
-                            if (Array.isArray(label)) {
-                              return label.join(' ');
-                            } else {
-                              return label;
-                            }
-                        }
-                    }
-                }
+        const thematicData = [
+            { theme: 'Deep Tech', cagr: '48.2%', description: 'Projected to reach $714.6B by 2029, driven by AI, quantum computing, and biotech.' },
+            { theme: 'Next-Gen Internet', cagr: '19.6%', description: 'U.S. market to hit $268.47B by 2034, fueled by cloud, data analytics, and 5G.' },
+            { theme: 'Genomic Revolution', cagr: '9.4%', description: 'Global market to reach $66.8B by 2029, with advances in NGS and personalized medicine.' },
+            { theme: 'Fintech Innovation', cagr: '16.2%', description: 'Expected to become a $1.12T market by 2032, propelled by digital payments and AI.' },
+            { theme: 'Autonomous Tech & Robotics', cagr: '14.9%', description: 'Global market to reach $15.41B by 2034, driven by automation in multiple sectors.' },
+            { theme: 'Space Exploration', cagr: 'N/A', description: 'The space economy could reach $1.8 trillion by 2035, fueled by commercialization.' },
+        ];
+
+        const deepDiveData = {
+            ARKK: {
+                thesis: "Achieve long-term capital growth by investing in companies relevant to 'disruptive innovation' across sectors like AI, robotics, fintech, and genomics.",
+                holdings: [
+                    { name: 'Tesla Inc.', weight: 9.9 }, { name: 'Coinbase Global Inc.', weight: 7.6 },
+                    { name: 'Roku Inc.', weight: 6.6 }, { name: 'CRISPR Therapeutics AG', weight: 6.5 },
+                    { name: 'Roblox Corp.', weight: 6.2 }, { name: 'Tempus AI Inc.', weight: 4.7 },
+                    { name: 'Robinhood Markets Inc.', weight: 4.7 }, { name: 'Circle Internet Group', weight: 4.6 },
+                    { name: 'Shopify Inc.', weight: 4.6 }, { name: 'Palantir Technologies', weight: 4.4 }
+                ]
+            },
+            ARKQ: {
+                thesis: "Capture growth from companies in autonomous technology and robotics, including AI, energy storage, 3D printing, and automation.",
+                holdings: [
+                    { name: 'Kratos Defense & Security', weight: 11.3 }, { name: 'Tesla Inc.', weight: 10.0 },
+                    { name: 'Archer Aviation Inc.', weight: 6.5 }, { name: 'Palantir Technologies', weight: 5.9 },
+                    { name: 'Teradyne Inc.', weight: 5.7 }, { name: 'Rocket Lab USA Inc.', weight: 5.5 },
+                    { name: 'AeroVironment Inc.', weight: 5.3 }, { name: 'Iridium Communications', weight: 5.3 },
+                    { name: 'Trimble Inc.', weight: 5.2 }, { name: 'Advanced Micro Devices', weight: 5.1 }
+                ]
+            },
+            ARKW: {
+                thesis: "Invest in companies driving the 'next generation of Internet evolution,' including cloud computing, digital currencies, and the Internet of Things.",
+                holdings: [
+                    { name: 'Tesla Inc.', weight: 7.6 }, { name: 'Robinhood Markets Inc.', weight: 7.4 },
+                    { name: 'Coinbase Global Inc.', weight: 7.3 }, { name: 'Circle Internet Group', weight: 6.5 },
+                    { name: 'Roblox Corp.', weight: 6.3 }, { name: 'Roku Inc.', weight: 6.2 },
+                    { name: 'Shopify Inc.', weight: 5.8 }, { name: 'Palantir Technologies', weight: 5.7 },
+                    { name: 'Advanced Micro Devices', weight: 3.8 }, { name: 'Meta Platforms Inc.', weight: 3.5 }
+                ]
+            },
+            ARKG: {
+                thesis: "Invest in companies benefiting from advancements in genomics, including gene editing, genetic therapy, molecular diagnostics, and stem cells.",
+                holdings: [
+                    { name: 'CRISPR Therapeutics AG', weight: 12.8 }, { name: 'Tempus AI, Inc.', weight: 9.1 },
+                    { name: 'Twist Bioscience Corp.', weight: 7.0 }, { name: 'Recursion Pharma.', weight: 5.8 },
+                    { name: 'Guardant Health, Inc.', weight: 5.7 }, { name: 'Natera, Inc.', weight: 5.4 },
+                    { name: 'Personalis, Inc.', weight: 5.1 }, { name: 'Beam Therapeutics, Inc.', weight: 5.1 },
+                    { name: 'Schrodinger, Inc.', weight: 5.0 }, { name: '10x Genomics Inc.', weight: 4.9 }
+                ]
+            },
+            ARKF: {
+                thesis: "Target long-term growth from companies engaged in 'Fintech innovation,' including digital wallets, cryptocurrencies, and next-gen cloud platforms.",
+                holdings: [
+                    { name: 'Shopify Inc.', weight: 9.3 }, { name: 'Robinhood Markets Inc.', weight: 8.8 },
+                    { name: 'Coinbase Global Inc.', weight: 8.6 }, { name: 'Circle Internet Group', weight: 6.7 },
+                    { name: 'Toast Inc.', weight: 5.9 }, { name: 'Palantir Technologies', weight: 5.8 },
+                    { name: 'SoFi Technologies Inc.', weight: 5.5 }, { name: 'Block Inc.', weight: 5.3 },
+                    { name: 'Adyen NV', weight: 4.1 }, { name: 'MercadoLibre, Inc.', weight: 3.8 }
+                ]
+            },
+            ARKX: {
+                thesis: "Invest in companies involved in 'Space Exploration and Innovation,' including entities that lead, enable, or benefit from services beyond Earth's surface.",
+                holdings: [
+                    { name: 'Kratos Defense & Security', weight: 10.4 }, { name: 'Rocket Lab USA Inc.', weight: 9.9 },
+                    { name: 'Iridium Communications', weight: 8.0 }, { name: 'AeroVironment Inc.', weight: 7.0 },
+                    { name: 'Archer Aviation Inc.', weight: 6.8 }, { name: 'Palantir Technologies', weight: 6.5 },
+                    { name: 'Trimble Inc.', weight: 6.0 }, { name: 'L3Harris Technologies', weight: 5.7 },
+                    { name: 'Joby Aviation Inc.', weight: 5.0 }, { name: 'Teradyne Inc.', weight: 4.9 }
+                ]
             }
         };
-        
-        function wrapLabels(label, maxWidth) {
-            const words = label.split(' ');
-            const lines = [];
-            let currentLine = '';
-            words.forEach(word => {
-                if ((currentLine + word).length > maxWidth) {
-                    lines.push(currentLine.trim());
-                    currentLine = '';
-                }
-                currentLine += word + ' ';
-            });
-            lines.push(currentLine.trim());
-            return lines;
-        }
+
+        const strategyData = {
+            aggressive: {
+                title: 'Aggressive Growth',
+                funds: ['ARKK', 'ARKW', 'ARKF'],
+                rationale: "For investors seeking maximum exposure to disruptive technological shifts. This combination aims to capture growth across several interconnected yet distinct innovation platforms: broad cross-sector innovation (ARKK), the evolving internet landscape (ARKW), and the transformation of financial services (ARKF). These funds align with sectors projected for high growth but also carry high risk."
+            },
+            thematic: {
+                title: 'Targeted Thematic',
+                funds: ['ARKQ', 'ARKG'],
+                rationale: "For investors with strong conviction in specific disruptive areas. This combination provides focused exposure to autonomous technology & robotics (ARKQ) and the genomic revolution (ARKG). These themes, while both innovative, have distinct underlying drivers and market cycles, potentially offering some diversification benefits within the high-growth context."
+            },
+            frontier: {
+                title: 'Emerging Frontier',
+                funds: ['ARKB', 'ARKD'],
+                rationale: "For investors with a very high risk tolerance willing to embrace extreme volatility for potentially outsized returns. This strategy provides exposure to digital assets, with ARKB tracking spot Bitcoin and ARKD offering a broader play on the blockchain industry. These are highly speculative investments with very short track records and a significant risk of capital loss."
+            }
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
-            const importsCtx = document.getElementById('importsDonutChart').getContext('2d');
-            new Chart(importsCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Brazil', 'Colombia', 'Vietnam', 'Honduras', 'Other'],
-                    datasets: [{
-                        label: 'Share of U.S. Coffee Imports',
-                        data: [31, 20, 9, 7, 33],
-                        backgroundColor: [
-                            energeticPlayfulPalette.darkCyan,
-                            energeticPlayfulPalette.turquoise,
-                            energeticPlayfulPalette.lightRed,
-                            energeticPlayfulPalette.yellow,
-                            energeticPlayfulPalette.orange
-                        ],
-                        borderColor: energeticPlayfulPalette.white,
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        ...tooltipConfig.plugins,
-                        legend: {
-                            position: 'top',
-                        }
+            let currentSort = { column: 'ticker', direction: 'asc' };
+            let performanceChart;
+            let deepDiveChart;
+
+            // Section 1: Funds Table
+            const fundsTableBody = document.getElementById('funds-table-body');
+            function renderTable() {
+                const sortedData = [...fundsData].sort((a, b) => {
+                    let aVal = a[currentSort.column];
+                    let bVal = b[currentSort.column];
+                    if (currentSort.column === 'expense') {
+                        aVal = parseFloat(aVal);
+                        bVal = parseFloat(bVal);
                     }
-                }
+                    if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                fundsTableBody.innerHTML = sortedData.map(fund => `
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                        <td class="p-4 font-medium text-slate-900">${fund.ticker}</td>
+                        <td class="p-4">${fund.name}</td>
+                        <td class="p-4">${fund.inception}</td>
+                        <td class="p-4">${fund.style}</td>
+                        <td class="p-4">${fund.expense.toFixed(2)}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            document.querySelectorAll('#overview th').forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.sort;
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.column = column;
+                        currentSort.direction = 'asc';
+                    }
+                    renderTable();
+                });
             });
 
-            const tariffsCtx = document.getElementById('tariffsBarChart').getContext('2d');
-            new Chart(tariffsCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Brazil', 'Mexico', 'Vietnam', 'Indonesia'],
-                    datasets: [{
-                        label: 'Current/Proposed Tariff Rate (%)',
-                        data: [50, 45, 20, 19],
-                        backgroundColor: [
-                            energeticPlayfulPalette.lightRed,
-                            energeticPlayfulPalette.orange,
-                            energeticPlayfulPalette.turquoise,
-                            energeticPlayfulPalette.darkCyan
-                        ],
-                        borderColor: energeticPlayfulPalette.white,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Tariff Rate (%)'
+
+            // Section 2: Performance Hub
+            const metricButtonsContainer = document.getElementById('metric-buttons');
+            const ctxPerformance = document.getElementById('performanceChart').getContext('2d');
+            let activeMetric = '1-Year';
+
+            function renderPerformanceChart() {
+                const data = performanceData[activeMetric];
+                const labels = Object.keys(data);
+                const values = Object.values(data);
+
+                if (performanceChart) {
+                    performanceChart.destroy();
+                }
+
+                performanceChart = new Chart(ctxPerformance, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: `${activeMetric} Return (%)`,
+                            data: values,
+                            backgroundColor: 'rgba(2, 132, 199, 0.6)', // sky-600
+                            borderColor: 'rgba(2, 132, 199, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y.toFixed(2) + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Return (%)'
+                                }
                             }
                         }
+                    }
+                });
+                document.getElementById('chart-context-text').textContent = `Showing annualized total returns for the ${activeMetric} period. Data as of mid-2025.`;
+            }
+
+            Object.keys(performanceData).forEach(metric => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = metric;
+                button.className = `px-4 py-2 text-sm font-medium transition-colors duration-200 first:rounded-l-lg last:rounded-r-lg border border-slate-200 focus:z-10 focus:ring-2 focus:ring-sky-500 ${metric === activeMetric ? 'active-button' : 'inactive-button'}`;
+                button.addEventListener('click', () => {
+                    activeMetric = metric;
+                    document.querySelectorAll('#metric-buttons button').forEach(btn => {
+                        btn.classList.remove('active-button');
+                        btn.classList.add('inactive-button');
+                    });
+                    button.classList.add('active-button');
+                    button.classList.remove('inactive-button');
+                    renderPerformanceChart();
+                });
+                metricButtonsContainer.appendChild(button);
+            });
+            
+            // Section 3: Thematic Explorer
+            const thematicGrid = document.getElementById('thematic-grid');
+            thematicGrid.innerHTML = thematicData.map(item => `
+                <div class="bg-white p-6 rounded-xl shadow-lg transform hover:-translate-y-1 transition-transform duration-300">
+                    <h3 class="text-xl font-bold text-slate-900">${item.theme}</h3>
+                    <p class="text-3xl font-bold text-sky-600 my-3">${item.cagr} <span class="text-base font-medium text-slate-500">CAGR</span></p>
+                    <p class="text-slate-600 text-sm">${item.description}</p>
+                </div>
+            `).join('');
+
+            // Section 4: Fund Deep Dive
+            const fundSelector = document.getElementById('fund-selector');
+            const fundDetailsContent = document.getElementById('fund-details-content');
+            
+            Object.keys(deepDiveData).forEach(ticker => {
+                const option = document.createElement('option');
+                option.value = ticker;
+                option.textContent = `${ticker} - ${fundsData.find(f => f.ticker === ticker).name}`;
+                fundSelector.appendChild(option);
+            });
+
+            function renderDeepDive(ticker) {
+                const data = deepDiveData[ticker];
+                if (!data) return;
+
+                const holdingsLabels = data.holdings.map(h => h.name);
+                const holdingsWeights = data.holdings.map(h => h.weight);
+                const otherWeight = 100 - holdingsWeights.reduce((a, b) => a + b, 0);
+                holdingsLabels.push('Other Holdings');
+                holdingsWeights.push(otherWeight);
+
+                fundDetailsContent.innerHTML = `
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">${ticker} - ${fundsData.find(f => f.ticker === ticker).name}</h3>
+                    <p class="text-slate-600 mb-6">${data.thesis}</p>
+                    <div class="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded-r-lg mb-6" role="alert">
+                      <p class="font-bold">Note on Holdings Overlap</p>
+                      <p>Many core holdings like Tesla, Coinbase, and Palantir appear across multiple ARK funds. This can increase portfolio concentration risk despite holding different ETFs.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h4 class="font-semibold text-lg mb-2 text-slate-800">Top 10 Holdings & Weight</h4>
+                            <ul class="space-y-1 text-sm">
+                                ${data.holdings.slice(0, 10).map(h => `
+                                    <li class="flex justify-between">
+                                        <span class="text-slate-600">${h.name}</span>
+                                        <span class="font-medium text-slate-800">${h.weight.toFixed(1)}%</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                        <div class="chart-container !h-64 sm:!h-72">
+                            <canvas id="deepDiveChart"></canvas>
+                        </div>
+                    </div>
+                `;
+
+                if (deepDiveChart) deepDiveChart.destroy();
+                const ctxDeepDive = document.getElementById('deepDiveChart').getContext('2d');
+                deepDiveChart = new Chart(ctxDeepDive, {
+                    type: 'doughnut',
+                    data: {
+                        labels: holdingsLabels,
+                        datasets: [{
+                            data: holdingsWeights,
+                            backgroundColor: ['#0ea5e9', '#38bdf8', '#7dd3fc', '#bae6fd', '#e0f2fe', '#f0f9ff', '#a3a3a3', '#d4d4d4', '#e5e5e5', '#f5f5f5', '#cccccc'],
+                            borderColor: '#fff',
+                            borderWidth: 2,
+                        }]
                     },
-                    plugins: {
-                        ...tooltipConfig.plugins,
-                        legend: {
-                            display: false
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
                         }
                     }
+                });
+            }
+
+            fundSelector.addEventListener('change', (e) => renderDeepDive(e.target.value));
+
+            // Section 5: Strategy Builder
+            const strategyTabs = document.getElementById('strategy-tabs');
+            const strategyContent = document.getElementById('strategy-content');
+
+            Object.keys(strategyData).forEach((key, index) => {
+                const tab = document.createElement('button');
+                tab.textContent = strategyData[key].title;
+                tab.dataset.target = key;
+                tab.className = `whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-300 ${index === 0 ? 'active-tab' : 'inactive-tab'}`;
+                strategyTabs.appendChild(tab);
+            });
+
+            function renderStrategy(key) {
+                const data = strategyData[key];
+                strategyContent.innerHTML = `
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        ${data.funds.map(ticker => `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-sky-100 text-sky-800">${ticker}</span>`).join('')}
+                    </div>
+                    <p class="text-slate-600">${data.rationale}</p>
+                `;
+            }
+
+            strategyTabs.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const targetKey = e.target.dataset.target;
+                    document.querySelectorAll('#strategy-tabs button').forEach(btn => {
+                        btn.classList.remove('active-tab');
+                        btn.classList.add('inactive-tab');
+                    });
+                    e.target.classList.add('active-tab');
+                    e.target.classList.remove('inactive-tab');
+                    renderStrategy(targetKey);
                 }
             });
             
-            const mapElement = document.getElementById('map-container');
-            const mapData = [{
-                type: 'scattergeo',
-                mode: 'markers+text',
-                lon: [-47.9292, -74.2973, -64.2704, -90.2308, 38.8623, 36.7783, 34.8888, 78.9629, 95.3175, 37.9083, 34.8888],
-                lat: [-15.7797, 4.5709, -15.5961, 15.7835, 9.1450, -1.2921, -6.3690, 20.5937, 3.9101, -0.0236, -6.3690],
-                text: ['Brazil', 'Colombia', 'Costa Rica', 'Guatemala', 'Ethiopia', 'Kenya', 'Tanzania', 'India', 'Sumatra', 'Kenya', 'Tanzania'],
-                textposition: 'top center',
-                textfont: {
-                    color: energeticPlayfulPalette.darkCyan,
-                    size: 12,
-                    family: 'Inter, sans-serif'
-                },
-                marker: {
-                    size: [25, 20, 15, 15, 18, 15, 15, 18, 18, 15, 15],
-                    color: [
-                        energeticPlayfulPalette.lightRed, 
-                        energeticPlayfulPalette.turquoise, 
-                        energeticPlayfulPalette.orange, 
-                        energeticPlayfulPalette.yellow, 
-                        energeticPlayfulPalette.darkCyan,
-                        energeticPlayfulPalette.turquoise,
-                        energeticPlayfulPalette.orange,
-                        energeticPlayfulPalette.lightRed,
-                        energeticPlayfulPalette.yellow,
-                        energeticPlayfulPalette.turquoise,
-                        energeticPlayfulPalette.orange
-                    ],
-                    line: {
-                        width: 1,
-                        color: energeticPlayfulPalette.white
+            // Navigation scroll highlighting
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            window.onscroll = () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
                     }
-                },
-                name: 'Coffee Producing Nations'
-            }];
-
-            const mapLayout = {
-                title: '',
-                showlegend: false,
-                geo: {
-                    scope: 'world',
-                    projection: {
-                        type: 'robinson'
-                    },
-                    showland: true,
-                    landcolor: 'rgb(240, 244, 248)',
-                    subunitcolor: 'rgb(255, 255, 255)',
-                    countrycolor: 'rgb(217, 217, 217)',
-                    showlakes: true,
-                    lakecolor: 'rgb(255, 255, 255)',
-                    bgcolor: 'rgba(0,0,0,0)'
-                },
-                margin: { l: 0, r: 0, t: 0, b: 0 },
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)'
-            };
-
-            Plotly.newPlot(mapElement, mapData, mapLayout, {responsive: true, displayModeBar: false});
-        });
-
-        async function getClimateInsight(countryName) {
-            const modal = document.getElementById('insightModal');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalContent = document.getElementById('modalContent');
-            const modalLoading = document.getElementById('modalLoading');
-
-            modalTitle.textContent = `Climate Insight for ${countryName}`;
-            modalContent.textContent = '';
-            modalLoading.style.display = 'block';
-            modal.style.display = 'flex'; // Use flex to center
-
-            try {
-                let chatHistory = [];
-                const prompt = `Provide a concise summary of climate change impacts on coffee production in ${countryName}. Focus on specific issues like temperature changes, rainfall patterns, pests, and land suitability.`;
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    modalContent.textContent = text;
-                } else {
-                    modalContent.textContent = 'Could not retrieve insight. Please try again.';
-                }
-            } catch (error) {
-                console.error('Error fetching climate insight:', error);
-                modalContent.textContent = 'An error occurred while fetching insight. Please try again.';
-            } finally {
-                modalLoading.style.display = 'none';
-            }
-        }
+                navLinks.forEach(link => {
+                    link.classList.remove('active-nav');
+                    link.classList.add('inactive-nav');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active-nav');
+                    }
+                });
+            };
 
-        function closeModal() {
-            const modal = document.getElementById('insightModal');
-            modal.style.display = 'none';
-        }
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('insightModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
+            // Initial renders
+            renderTable();
+            renderPerformanceChart();
+            renderDeepDive(fundSelector.value);
+            renderStrategy('aggressive');
+        });
     </script>
 </body>
 </html>
